@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Felixida 幸運轉盤 v7 (終極穩定版)</title>
+    <title>Felixida 幸運轉盤 v7 (終極穩定版 - 客製名單)</title>
     <style>
         :root {
             --bg-gradient-start: #ff9966;
@@ -19,7 +19,6 @@
             font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
         }
 
-        /* Body 設定：電腦版不捲動，手機版可捲動 */
         body {
             margin: 0;
             background: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-end));
@@ -29,7 +28,7 @@
             min-height: 100vh;
             padding: 20px;
             color: var(--text-main);
-            overflow: hidden; /* 電腦版預設 */
+            overflow: hidden; 
         }
 
         .container {
@@ -42,14 +41,12 @@
             justify-content: center;
         }
 
-        /* --- 左側：榮譽榜單 (電腦版) --- */
+        /* --- 左側：榮譽榜單 --- */
         .winners-panel {
-            flex: 1; /* 佔用剩餘空間 */
-            /* 關鍵修正：限制寬度範圍，並不允許被壓縮 */
+            flex: 1;
             min-width: 300px;
             max-width: 350px;
             flex-shrink: 0; 
-            
             height: 80%;
             background: var(--panel-bg);
             border: 4px solid var(--accent);
@@ -89,26 +86,23 @@
         .w-name { font-weight: bold; font-size: 1.1rem; color: #333; }
         .w-prize { font-size: 0.9rem; color: #666; }
 
-        /* --- 右側：轉盤區 (電腦版) --- */
+        /* --- 右側：轉盤區 --- */
         .wheel-section {
-            /* 關鍵修正：讓轉盤區塊佔用主要空間，但不超過版面 */
             flex: 2;
             display: flex;
             justify-content: center;
             align-items: center;
             position: relative;
-            height: 100%; /* 填滿容器高度 */
-            overflow: visible; /* 允許指針凸出去 */
+            height: 100%; 
+            overflow: visible; 
         }
 
         .wheel-border {
             position: relative;
-            /* 關鍵修正：電腦版以「高度」為基準，確保不會過寬 */
             height: 80vh; 
-            width: 80vh;  /* 強制寬度等於高度 */
-            max-width: 600px; /* 限制最大尺寸 */
+            width: 80vh; 
+            max-width: 600px; 
             max-height: 600px;
-            
             border-radius: 50%;
             padding: 15px;
             background: conic-gradient(#ff9f43, #ee5253, #ff9f43, #ee5253, #ff9f43);
@@ -117,7 +111,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            flex-shrink: 0; /* 禁止被壓縮，保持正圓 */
+            flex-shrink: 0; 
         }
 
         .wheel-container {
@@ -128,7 +122,6 @@
             position: relative;
             overflow: hidden;
             border: 5px solid white;
-            /* 旋轉動畫應用於此 */
             transition: transform 0s cubic-bezier(0.25, 0.1, 0.25, 1);
             will-change: transform;
         }
@@ -145,7 +138,6 @@
             background: #d63031; clip-path: polygon(50% 100%, 0 0, 100% 0); border-top: 5px solid #b71c1c;
         }
 
-        /* 中間按鈕 */
         .center-btn {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             width: 20%; height: 20%; background: white; border-radius: 50%;
@@ -156,7 +148,6 @@
         .center-btn:active { transform: translate(-50%, -50%) scale(0.95); }
         .center-logo { width: 90%; height: auto; object-fit: contain; }
 
-        /* 設定按鈕 */
         .settings-fab {
             position: fixed; top: 30px; right: 30px; width: 60px; height: 60px;
             background: white; border-radius: 50%; box-shadow: 0 5px 15px rgba(0,0,0,0.2);
@@ -165,7 +156,7 @@
         }
         .settings-fab:hover { transform: rotate(90deg); }
 
-        /* 彈窗樣式 */
+        /* Modal Styles */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.7); backdrop-filter: blur(5px);
@@ -180,20 +171,18 @@
         }
         .modal-overlay.active .modal-content { transform: scale(1); }
         
-        /* 結果視窗放大 */
         #resultModal.active .modal-content { transform: scale(2) !important; max-width: 400px; }
         @media (max-width: 600px) { #resultModal.active .modal-content { transform: scale(1.5) !important; } }
 
-        /* 預告視窗 */
         .modal-flashy { background: #ffffff; border: 6px solid var(--accent); color: var(--text-main); max-width: 600px; width: 95%; padding: 50px 30px; }
         .modal-flashy h2 { font-size: 2.5rem; color: var(--primary); margin-bottom: 20px; }
         .announce-prize-name { font-size: 4rem; font-weight: 900; color: #b3541e; margin: 30px 0 50px 0; line-height: 1.2; border-bottom: 2px dashed #eee; padding-bottom: 20px; }
+        
         .btn-large { padding: 15px 50px; font-size: 1.5rem; border-radius: 50px; background: var(--primary); color: white; border: none; box-shadow: 0 8px 20px rgba(230, 81, 0, 0.3); transition: all 0.3s; }
         .btn-large:hover { transform: scale(1.05); background: #ef6c00; }
         .animate-pulse { animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(230, 81, 0, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(230, 81, 0, 0); } 100% { box-shadow: 0 0 0 0 rgba(230, 81, 0, 0); } }
 
-        /* 設定視窗 */
         .input-group { margin-bottom: 15px; text-align: left; }
         .input-group label { display: block; font-weight: bold; margin-bottom: 5px; color: #555; }
         textarea { width: 100%; height: 100px; padding: 10px; border: 1px solid #ddd; border-radius: 8px; resize: vertical; }
@@ -204,46 +193,12 @@
         .winner-name { font-size: 2.5rem; font-weight: 800; color: var(--primary); margin: 10px 0; }
         .prize-display { font-size: 1.2rem; color: #b3541e; font-weight: bold; margin-bottom: 20px; }
 
-        /* --- ⚠️ 關鍵修正區：手機版 (RWD) --- */
         @media (max-width: 850px) {
-            body {
-                /* 手機版允許捲動，內容從上排到下 */
-                overflow-y: auto; 
-                display: block; 
-                height: auto;
-                padding-top: 20px;
-                padding-bottom: 50px;
-            }
-            .container {
-                display: flex;
-                flex-direction: column; /* 垂直排列 */
-                height: auto;
-                gap: 30px;
-            }
-            .wheel-section {
-                order: 1; /* 轉盤在最上面 */
-                width: 100%;
-                height: auto;
-                margin-top: 10px;
-                flex: none; /* 關閉彈性 */
-            }
-            .wheel-border {
-                /* 手機版：寬度佔滿 90%，並強制 1:1 */
-                width: 90vw;
-                height: 90vw; /* 這裡強制高度=寬度，解決變扁問題 */
-                max-width: 380px; 
-                max-height: 380px;
-                margin: 0 auto;
-                flex-shrink: 0;
-            }
-            .winners-panel {
-                order: 2; /* 榜單在下面 */
-                width: 90%; 
-                max-width: 100%; 
-                height: 400px; /* 給予固定高度，確保內部可捲動 */
-                flex: none;
-                margin: 0 auto;
-            }
+            body { overflow-y: auto; display: block; height: auto; padding-top: 20px; padding-bottom: 50px; }
+            .container { display: flex; flex-direction: column; height: auto; gap: 30px; }
+            .wheel-section { order: 1; width: 100%; height: auto; margin-top: 10px; flex: none; }
+            .wheel-border { width: 90vw; height: 90vw; max-width: 380px; max-height: 380px; margin: 0 auto; flex-shrink: 0; }
+            .winners-panel { order: 2; width: 90%; max-width: 100%; height: 400px; flex: none; margin: 0 auto; }
             .announce-prize-name { font-size: 3rem; }
             .settings-fab { top: 15px; right: 15px; width: 50px; height: 50px; font-size: 24px; }
         }
@@ -270,7 +225,7 @@
             </div>
             <div class="pointer"></div>
             <div class="center-btn" onclick="triggerPrizeAnnouncement()">
-                <img src="image_dff46b.png" alt="GO Logo" class="center-logo" onerror="this.style.display='none'; this.parentNode.innerHTML='<div style=\'font-weight:bold; color:#e65100; font-size:24px;\'>GO</div>'">
+                <div style='font-weight:bold; color:#e65100; font-size:24px;'>GO</div>
             </div>
         </div>
     </div>
@@ -290,17 +245,35 @@
     <div class="modal-content">
         <h2 style="margin-top:0; color:#333;">⚙️ 抽獎設定</h2>
         <div class="input-group">
-            <label>📋 參加名單</label>
-            <textarea id="namesInput">王小明
-李大華
-陳雅婷
-張偉
-Lisa
-Tom
-Alex
-Sara
-Kevin
-Amy</textarea>
+            <label>📋 參加名單 (預設已載入)</label>
+            <textarea id="namesInput">李啓穎
+許倚瑋
+柯俊宇
+徐媺
+王可安
+黃佳淑
+古瓊婷
+李婕瑜
+王于靜
+賴品方
+蕭惠萍
+何若菲
+黃瀞慧
+王文菁
+林琮憲
+藍沛慈
+胡娟娟
+林季翰
+鄭順憲
+蔡枃佑
+謝濯帆
+王昱婷
+詹惠菁
+張耀文
+許水樹
+陳世振
+謝禎煥
+崔孝宗</textarea>
         </div>
         <div class="input-group">
             <label>🎁 獎項清單</label>
@@ -339,9 +312,13 @@ Amy</textarea>
     let currentRotation = 0; 
     let spinVelocity = 0;
     
+    // 計算音效用的變數
+    let lastPlayedAngle = 0; 
+    
     const palette = ['#e65100', '#ffb74d', '#ffffff', '#ffcc80', '#ffe0b2', '#f57c00'];
     let segmentColors = [];
 
+    // --- 音效系統 (純程式碼生成，無需檔案) ---
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     let audioCtx = null;
 
@@ -350,22 +327,51 @@ Amy</textarea>
             if (!audioCtx) { audioCtx = new AudioContext(); }
             if (audioCtx.state === 'suspended') { audioCtx.resume(); }
         },
+        // 1. 轉動時的「喀喀」聲
+        playTick: function() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            // 使用三角波產生較清脆的點擊感
+            osc.type = 'triangle';
+            // 頻率稍高，模擬塑膠撞擊
+            osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.1);
+            
+            // 極短的時間
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.1);
+        },
+        // 2. 中獎時的「歡呼/音樂」聲
         playWin: function() {
             if (!audioCtx) return;
-            const notes = [523.25, 659.25, 783.99, 1046.50];
+            // 演奏一個 C 大調和弦琶音
+            const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51, 1567.98]; // C5, E5, G5, C6...
             let time = audioCtx.currentTime;
+            
             notes.forEach((freq, i) => {
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
-                osc.type = 'square';
+                
+                osc.type = i % 2 === 0 ? 'square' : 'sine'; // 混合波形更有遊戲感
                 osc.frequency.value = freq;
-                gain.gain.setValueAtTime(0.2, time);
-                gain.gain.exponentialRampToValueAtTime(0.01, time + 0.2);
+                
+                gain.gain.setValueAtTime(0.1, time);
+                gain.gain.exponentialRampToValueAtTime(0.01, time + 0.4);
+                
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
+                
                 osc.start(time);
-                osc.stop(time + 0.2);
-                time += 0.15;
+                osc.stop(time + 0.4);
+                time += 0.1; // 每個音間隔
             });
         }
     };
@@ -381,7 +387,10 @@ Amy</textarea>
         document.getElementById('countNames').innerText = names.length;
         document.getElementById('countPrizes').innerText = prizes.length;
         generateSafeColors();
+        
+        // 重置角度，避免指針錯位
         currentRotation = 0;
+        lastPlayedAngle = 0; 
         wheelContainer.style.transform = `rotate(0deg)`;
         drawWheel(); 
     }
@@ -445,7 +454,7 @@ Amy</textarea>
     }
 
     function triggerPrizeAnnouncement() {
-        SoundEffect.init();
+        SoundEffect.init(); // 初始化音效引擎
         if (isSpinning || names.length === 0) return;
         currentPrizeToDraw = prizes.length > 0 ? prizes[0] : "幸運獎（加碼）";
         document.getElementById('announcePrizeText').innerText = currentPrizeToDraw;
@@ -463,14 +472,28 @@ Amy</textarea>
     function executeSpin() {
         isSpinning = true;
         spinVelocityNum = 20 + Math.random() * 10; 
+        lastPlayedAngle = currentRotation; // 記錄開始時的角度
         rotateWheelLoop();
     }
 
     function rotateWheelLoop() {
-        spinVelocityNum *= 0.985; 
+        spinVelocityNum *= 0.985; // 摩擦力
         if (spinVelocityNum < 0.1) { stopRotateWheel(); return; }
+        
         currentRotation += spinVelocityNum;
         wheelContainer.style.transform = `rotate(${currentRotation}deg)`;
+
+        // --- 計算音效觸發 ---
+        // 算出每個扇形的角度 (360 / 人數)
+        const degreesPerSegment = 360 / names.length;
+        
+        // 如果目前轉過的角度 跨越了 新的扇形線
+        // (目前的總角度 / 每格角度) 取整數 > (上次發出聲音的角度 / 每格角度) 取整數
+        if (Math.floor(currentRotation / degreesPerSegment) > Math.floor(lastPlayedAngle / degreesPerSegment)) {
+            SoundEffect.playTick(); // 播放喀喀聲
+            lastPlayedAngle = currentRotation; // 更新上次發聲位置
+        }
+        
         animationFrameId = requestAnimationFrame(rotateWheelLoop);
     }
 
@@ -492,7 +515,7 @@ Amy</textarea>
             prizesInput.value = prizes.join('\n');
         }
 
-        SoundEffect.playWin();
+        SoundEffect.playWin(); // 播放勝利音效
         showResult(winnerName, currentPrizeToDraw);
         
         names.splice(winningIndex, 1);
