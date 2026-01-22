@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Felixida 幸運轉盤 v7 (終極穩定版 - 客製名單)</title>
+    <title>Felixida 幸運轉盤 v8 (自訂音效+重抽版)</title>
     <style>
         :root {
             --bg-gradient-start: #ff9966;
@@ -146,7 +146,8 @@
             cursor: pointer; overflow: hidden; border: 2px solid #eee; transition: transform 0.1s;
         }
         .center-btn:active { transform: translate(-50%, -50%) scale(0.95); }
-        .center-logo { width: 90%; height: auto; object-fit: contain; }
+        /* Logo 樣式設定 */
+        .center-logo { width: 85%; height: 85%; object-fit: contain; pointer-events: none; }
 
         .settings-fab {
             position: fixed; top: 30px; right: 30px; width: 60px; height: 60px;
@@ -187,11 +188,19 @@
         .input-group label { display: block; font-weight: bold; margin-bottom: 5px; color: #555; }
         textarea { width: 100%; height: 100px; padding: 10px; border: 1px solid #ddd; border-radius: 8px; resize: vertical; }
         .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+        
+        /* 按鈕樣式 */
         button { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1rem; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-secondary { background: #eee; color: #333; }
+        .btn-reroll { background: #607d8b; color: white; font-size: 0.8rem; display: flex; align-items: center; gap:5px; }
+        .btn-reroll:hover { background: #455a64; }
+
         .winner-name { font-size: 2.5rem; font-weight: 800; color: var(--primary); margin: 10px 0; }
         .prize-display { font-size: 1.2rem; color: #b3541e; font-weight: bold; margin-bottom: 20px; }
+        
+        /* 結果視窗的按鈕區 */
+        .result-actions { display: flex; justify-content: center; gap: 15px; margin-top: 20px; }
 
         @media (max-width: 850px) {
             body { overflow-y: auto; display: block; height: auto; padding-top: 20px; padding-bottom: 50px; }
@@ -225,7 +234,7 @@
             </div>
             <div class="pointer"></div>
             <div class="center-btn" onclick="triggerPrizeAnnouncement()">
-                <div style='font-weight:bold; color:#e65100; font-size:24px;'>GO</div>
+                <img src="image_dff46b.png" alt="GO" class="center-logo" onerror="this.style.display='none'; this.parentNode.innerHTML='<div style=\'font-weight:bold; color:#e65100; font-size:24px;\'>GO</div>'">
             </div>
         </div>
     </div>
@@ -245,7 +254,7 @@
     <div class="modal-content">
         <h2 style="margin-top:0; color:#333;">⚙️ 抽獎設定</h2>
         <div class="input-group">
-            <label>📋 參加名單 (預設已載入)</label>
+            <label>📋 參加名單</label>
             <textarea id="namesInput">李啓穎
 許倚瑋
 柯俊宇
@@ -294,7 +303,10 @@
         <div style="color:#888; font-size: 0.8rem;">🎉 恭喜得獎 🎉</div>
         <div class="winner-name" id="modalWinner">---</div>
         <div class="prize-display" id="modalPrize">---</div>
-        <button class="btn-primary" onclick="closeResultModal()" style="font-size: 0.8rem;">下一位</button>
+        <div class="result-actions">
+            <button class="btn-reroll" onclick="rerollCurrent()" title="取消本次中獎並重來">↪️ 重抽</button>
+            <button class="btn-primary" onclick="closeResultModal()" style="font-size: 0.8rem;">下一位</button>
+        </div>
     </div>
 </div>
 
@@ -305,6 +317,12 @@
     const namesInput = document.getElementById('namesInput');
     const prizesInput = document.getElementById('prizesInput');
 
+    // --- 修改1：音效設定 (請確保檔案在同資料夾) ---
+    const audioDrum = new Audio('drum.mp3'); 
+    audioDrum.loop = true; // 讓鼓聲循環播放
+    
+    const audioWin = new Audio('win.mp3'); 
+
     let names = [];
     let prizes = [];
     let isSpinning = false;
@@ -312,69 +330,12 @@
     let currentRotation = 0; 
     let spinVelocity = 0;
     
-    // 計算音效用的變數
-    let lastPlayedAngle = 0; 
+    // 用於重抽的暫存變數
+    let lastWinner = "";
+    let lastPrize = "";
     
     const palette = ['#e65100', '#ffb74d', '#ffffff', '#ffcc80', '#ffe0b2', '#f57c00'];
     let segmentColors = [];
-
-    // --- 音效系統 (純程式碼生成，無需檔案) ---
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    let audioCtx = null;
-
-    const SoundEffect = {
-        init: function() {
-            if (!audioCtx) { audioCtx = new AudioContext(); }
-            if (audioCtx.state === 'suspended') { audioCtx.resume(); }
-        },
-        // 1. 轉動時的「喀喀」聲
-        playTick: function() {
-            if (!audioCtx) return;
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            
-            // 使用三角波產生較清脆的點擊感
-            osc.type = 'triangle';
-            // 頻率稍高，模擬塑膠撞擊
-            osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.1);
-            
-            // 極短的時間
-            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-            
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.1);
-        },
-        // 2. 中獎時的「歡呼/音樂」聲
-        playWin: function() {
-            if (!audioCtx) return;
-            // 演奏一個 C 大調和弦琶音
-            const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51, 1567.98]; // C5, E5, G5, C6...
-            let time = audioCtx.currentTime;
-            
-            notes.forEach((freq, i) => {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                
-                osc.type = i % 2 === 0 ? 'square' : 'sine'; // 混合波形更有遊戲感
-                osc.frequency.value = freq;
-                
-                gain.gain.setValueAtTime(0.1, time);
-                gain.gain.exponentialRampToValueAtTime(0.01, time + 0.4);
-                
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                
-                osc.start(time);
-                osc.stop(time + 0.4);
-                time += 0.1; // 每個音間隔
-            });
-        }
-    };
 
     window.onload = () => { updateData(); };
 
@@ -388,9 +349,7 @@
         document.getElementById('countPrizes').innerText = prizes.length;
         generateSafeColors();
         
-        // 重置角度，避免指針錯位
         currentRotation = 0;
-        lastPlayedAngle = 0; 
         wheelContainer.style.transform = `rotate(0deg)`;
         drawWheel(); 
     }
@@ -445,16 +404,20 @@
             const isLight = (currentColor === '#ffffff' || currentColor === '#ffb74d' || currentColor === '#ffcc80' || currentColor === '#ffe0b2');
             ctx.fillStyle = isLight ? "#e65100" : "#ffffff";
             ctx.textAlign = "center"; ctx.textBaseline = "middle"; 
+            
+            // --- 修改2：名字位置往外推 ---
+            // 半徑的 0.85 倍 (85%) 處，離圓心更遠
             let fontSize = names.length > 20 ? 24 : 36;
             ctx.font = `bold ${fontSize}px "Microsoft JhengHei"`;
             if(!isLight) { ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = 4; }
-            ctx.fillText(names[i], 0, -radius * 0.75);
+            
+            // 這裡改成 -radius * 0.85 (原為 0.75)
+            ctx.fillText(names[i], 0, -radius * 0.85);
             ctx.restore();
         }
     }
 
     function triggerPrizeAnnouncement() {
-        SoundEffect.init(); // 初始化音效引擎
         if (isSpinning || names.length === 0) return;
         currentPrizeToDraw = prizes.length > 0 ? prizes[0] : "幸運獎（加碼）";
         document.getElementById('announcePrizeText').innerText = currentPrizeToDraw;
@@ -472,34 +435,31 @@
     function executeSpin() {
         isSpinning = true;
         spinVelocityNum = 20 + Math.random() * 10; 
-        lastPlayedAngle = currentRotation; // 記錄開始時的角度
+        
+        // 播放鼓聲音效
+        audioDrum.currentTime = 0;
+        audioDrum.play().catch(e => console.log("Audio play failed, interact with document first."));
+
         rotateWheelLoop();
     }
 
     function rotateWheelLoop() {
-        spinVelocityNum *= 0.985; // 摩擦力
+        spinVelocityNum *= 0.985; 
         if (spinVelocityNum < 0.1) { stopRotateWheel(); return; }
         
         currentRotation += spinVelocityNum;
         wheelContainer.style.transform = `rotate(${currentRotation}deg)`;
-
-        // --- 計算音效觸發 ---
-        // 算出每個扇形的角度 (360 / 人數)
-        const degreesPerSegment = 360 / names.length;
-        
-        // 如果目前轉過的角度 跨越了 新的扇形線
-        // (目前的總角度 / 每格角度) 取整數 > (上次發出聲音的角度 / 每格角度) 取整數
-        if (Math.floor(currentRotation / degreesPerSegment) > Math.floor(lastPlayedAngle / degreesPerSegment)) {
-            SoundEffect.playTick(); // 播放喀喀聲
-            lastPlayedAngle = currentRotation; // 更新上次發聲位置
-        }
-        
         animationFrameId = requestAnimationFrame(rotateWheelLoop);
     }
 
     function stopRotateWheel() {
         cancelAnimationFrame(animationFrameId);
         isSpinning = false;
+        
+        // 停止鼓聲，播放中獎聲
+        audioDrum.pause();
+        audioWin.currentTime = 0;
+        audioWin.play().catch(e => console.log("Win audio play failed."));
         
         const finalRotation = currentRotation % 360;
         const arcDeg = arc * 180 / Math.PI;
@@ -510,14 +470,19 @@
         const winningIndex = Math.floor(pointerAngleOnCanvas / arcDeg);
         const winnerName = names[winningIndex] || names[0];
 
+        // 處理獎品
         if (prizes.length > 0) {
             prizes.shift();
             prizesInput.value = prizes.join('\n');
         }
 
-        SoundEffect.playWin(); // 播放勝利音效
+        // 記錄最後得獎者供「重抽」使用
+        lastWinner = winnerName;
+        lastPrize = currentPrizeToDraw;
+
         showResult(winnerName, currentPrizeToDraw);
         
+        // 移除得獎者
         names.splice(winningIndex, 1);
         namesInput.value = names.join('\n');
     }
@@ -527,12 +492,41 @@
         document.getElementById('modalPrize').innerText = prize;
         document.getElementById('resultModal').classList.add('active');
         
+        // 新增到左側榜單
         const div = document.createElement('div');
         div.className = 'winner-item';
         div.innerHTML = `<span class="w-name">${name}</span><span class="w-prize">${prize}</span>`;
         const list = document.getElementById('historyList');
         list.insertBefore(div, list.firstChild);
+        
         createConfetti();
+    }
+
+    // --- 修改4：重抽功能邏輯 ---
+    function rerollCurrent() {
+        if (!confirm("確定要取消這次中獎並重抽嗎？\n(名單與獎項將會復原)")) return;
+
+        // 1. 把人加回去
+        if (lastWinner) {
+            names.push(lastWinner);
+            namesInput.value = names.join('\n');
+        }
+        
+        // 2. 把獎項加回去 (加到最上面)
+        if (lastPrize && lastPrize !== "幸運獎（加碼）") {
+            prizes.unshift(lastPrize);
+            prizesInput.value = prizes.join('\n');
+        }
+
+        // 3. 移除左側榜單的最新一筆
+        const list = document.getElementById('historyList');
+        if (list.firstChild) {
+            list.removeChild(list.firstChild);
+        }
+
+        // 4. 關閉視窗並更新轉盤
+        document.getElementById('resultModal').classList.remove('active');
+        updateData(); // 這會重畫轉盤
     }
 
     function closeResultModal() {
